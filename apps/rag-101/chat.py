@@ -5,15 +5,16 @@ import os
 import openai
 from pymongo import MongoClient
 
-# Initialize OpenAI client
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialize OpenAI and MongoDB clients
+openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+mongodb_client = MongoClient(os.getenv("MONGODB_URI"))
 
 # === Generate Embedding ===
-# This function takes a text (in our example, the description of the game) and generates the embedding vector.
+# This function takes a string (the game's description or our query) and generates the embedding vector.
 # We use OpenAI's text embedding, but you can replace it with other embedding model.
 def generate_embedding(text):
     try:
-        response = client.embeddings.create(
+        response = openai_client.embeddings.create(
             model="text-embedding-3-small",
             input=text
         )
@@ -23,15 +24,12 @@ def generate_embedding(text):
         raise
 
 # === Search games in the MongoDB collection ===
-# This uses OpenAI's API to convert text into a vector representation.
-# Search function using MongoDB Atlas Vector Search
+# Search function using MongoDB Atlas Vector Search. We limit to the three most relevant results
 def search_games(query, limit=3):
-    uri = os.getenv("MONGODB_URI")
-    client = MongoClient(uri)
 
     try:
         print("Connected to MongoDB")
-        db = client["gameDatabase"]
+        db = mongodb_client["gameDatabase"]
         collection = db["games"]
 
         print(f"Generating embedding for query: \"{query}\"")
@@ -70,11 +68,11 @@ def search_games(query, limit=3):
         raise
 
     finally:
-        client.close()
+        mongodb_client.close()
         print("MongoDB connection closed")
 
-# === Search games in the MongoDB collection ===
-# 
+# === Use our LLM to generate a response ===
+# Given the user query and the games we found, we use the LLM to provide a useful response
 def generate_response(query, search_results):
     if not search_results:
         return "I couldn't find any games matching your criteria in our database."
@@ -90,7 +88,8 @@ def generate_response(query, search_results):
         """ for game in search_results
     ])
 
-    # Build the prompt
+    # This is the prompt. The request we send to the LLM. Here you can craft how you want it to respond, act, and think.
+    # For example, if the context was more serious, we could ask the LLM to be more formal.
     prompt =    f"""
                 A user asked: "{query}"
                 Based on this query, I found the following games in my database:
@@ -99,7 +98,7 @@ def generate_response(query, search_results):
                 """
 
     try:
-        response = client.chat.completions.create(
+        response = openai_client.chat.completions.create(
             model="gpt-4",
             messages=[
                 { "role": "system", "content": "You are a helpful AI assistant that specializes in video game recommendations." },
@@ -113,10 +112,10 @@ def generate_response(query, search_results):
         fallback_titles = ", ".join([g.get("title") for g in search_results])
         return f'Based on your query "{query}", I found these games that might interest you: {fallback_titles}'
 
-# === Search games in the MongoDB collection ===
-# 
+# === Entry point for our chat ===
+# Try modifying the user_query to get other recommended games
 if __name__ == "__main__":
-    test_query = "recommend a game that is a shooter in space"
-    test_games_found = search_games(test_query)
-    test_response = generate_response(test_query, test_games_found)
-    print(test_response)
+    user_query = "recommend a game that is a shooter in space"
+    games_found = search_games(user_query)
+    llm_response = generate_response(user_query, games_found)
+    print(llm_response)
