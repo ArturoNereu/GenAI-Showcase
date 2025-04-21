@@ -1,3 +1,5 @@
+![](images/banner.png)
+
 This is a step-by-step guide on how to create a very basic RAG Application using MongoDB, VoyageAI, and OpenAI.
 
 

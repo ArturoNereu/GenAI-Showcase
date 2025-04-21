@@ -1,12 +1,15 @@
 #pip3 install pymongo
 #pip3 install openai
+#pip3 install voyageai
 
 import os
 import openai
+import voyageai
 from pymongo import MongoClient
 
 # Initialize OpenAI and MongoDB clients
 openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+voyageai_client = voyageai.Client(api_key=os.getenv("VOYAGE_API_KEY"))
 mongodb_client = MongoClient(os.getenv("MONGODB_URI"))
 
 # === Generate Embedding ===
@@ -14,11 +17,8 @@ mongodb_client = MongoClient(os.getenv("MONGODB_URI"))
 # We use OpenAI's text embedding, but you can replace it with other embedding model.
 def generate_embedding(text):
     try:
-        response = openai_client.embeddings.create(
-            model="text-embedding-3-small",
-            input=text
-        )
-        return response.data[0].embedding
+        result = voyageai_client.embed([text], model="voyage-3")
+        return result.embeddings[0]
     except Exception as e:
         print("Error generating embedding:", e)
         raise
