@@ -16,6 +16,7 @@ collection.insert_many(data)
 print(f"Inserted {len(data)} documents into {collection.name}")
 
 # Define our Vector Search Index. This can be done via the UI in MongoDB Atlas.
+# The numDimensions value must correspond to the Embedding model's dimension. In our case, voyage-3 uses 1024: https://docs.voyageai.com/docs/embeddings
 index_definition = {
     "name": "vector_index",
     "definition": {
@@ -23,7 +24,7 @@ index_definition = {
             {
                 "type": "vector",
                 "path": "embedding",
-                "numDimensions": 1536,
+                "numDimensions": 1024,
                 "similarity": "cosine"
             }
         ]
