@@ -114,7 +114,7 @@ def generate_response(query, search_results):
 
 # === Entry point for our chat ===
 # Try modifying the user_query to get other recommended games
-# For this to work you need to have a MongoDB Atlas cluster(and a connection string), and an OpenAI key. 
+# For this to work you need to have a MongoDB Atlas cluster(and a connection string), a VoyageAI key, and an OpenAI key. 
 # Run the save_game_collection.py script first.
 if __name__ == "__main__":
     user_query = "recommend a game that is a shooter in space"
